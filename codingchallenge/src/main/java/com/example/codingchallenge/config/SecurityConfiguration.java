@@ -2,15 +2,16 @@ package com.example.codingchallenge.config;
 
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 
@@ -19,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfiguration {
 	
+	@Autowired UserDetailsService userDetailsService;
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity security)throws Exception
 	{
@@ -26,18 +28,31 @@ public class SecurityConfiguration {
 		.csrf(csrf -> csrf.disable()) //http.csrf().disable();
 		.authorizeHttpRequests//cust<t>
 		(requests->requests
-		.requestMatchers("/api/tasks/**").permitAll()
-		.requestMatchers("/api/admin/tasks/**").hasRole("ADMIN")
+		.requestMatchers("/user").permitAll()
+		.requestMatchers("/userspi/admin/tasks/**").hasRole("ADMIN")
 		.requestMatchers("/api/user/tasks/**").hasRole("USER")
 		.anyRequest()//other than http req authenticated
-		.authenticated()
-		)
-		.formLogin(Customizer.withDefaults());//form Login
-		//.logout(Customizer.withDefaults());
-		return security.build();		
+		.authenticated())
+		.httpBasic(Customizer.withDefaults());
+	    return security.build();
+	}
+	@Bean
+	public AuthenticationProvider authenticationProvider()
+	{
+		DaoAuthenticationProvider provider= new DaoAuthenticationProvider();
+		provider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());//no encode
+		provider.setUserDetailsService(userDetailsService);
+		return provider;
 	}
 	
+}
+
+		//form Login
+		//.logout(Customizer.withDefaults());
 	
+	
+	
+	/*
 	@Bean
 	public UserDetailsService userDetailsService()
 	{
@@ -54,7 +69,6 @@ public class SecurityConfiguration {
 				.build();
 		return new InMemoryUserDetailsManager(userRam,userKeeri);
 	
-	}
+	}*/
 	
-}
 
